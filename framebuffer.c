@@ -30,16 +30,17 @@ int main()
 
     // Read alphabet A
 	FILE *in;
-	if ((in = fopen("alphabets/A.txt", "rt")) != NULL) {
-        int i = 0;
-	    while(read_line(in, alphabets[0][i], sizeof alphabets[0][i])) {  
-          i++;
-        }
-        for (int j = 0; j < 33; j++) {
-            // printf("%s", alphabets[0][j]);
-        }
-	    fclose(in);
-	}
+    for(char a= 'A'; a<= 'Z'; a++) {
+        char fname[] = "alphabets/A.txt";
+        fname[10] = a;
+    	if ((in = fopen(fname, "rt")) != NULL) {
+            int i = 0;
+    	    while(read_line(in, alphabets[a-'A'][i], sizeof alphabets[0][i])) {  
+              i++;
+            }
+    	    fclose(in);
+    	}
+    }
 
     int fbfd = 0;
     struct fb_var_screeninfo vinfo;
@@ -51,8 +52,6 @@ int main()
 
     char input[1000];
     scanf("%[^\n]",input);
-    // printf("%s\n",input);
-
 
     // Open the file for reading and writing
     fbfd = open("/dev/fb0", O_RDWR);
@@ -73,7 +72,6 @@ int main()
         perror("Error reading variable information");
         exit(3);
     }
-    // printf("STRLEN: %lld\n\n\n\n\n", strlen(input));    
     printf("%dx%d, %dbpp\n", vinfo.xres, vinfo.yres, vinfo.bits_per_pixel);
 
     // Figure out the size of the screen in bytes
@@ -91,46 +89,50 @@ int main()
 
     // Figure out where in memory to put the pixel
     int i;
+    int cursor = 0;
+    int xoffset = 0;
+    int yoffset = 0;
     for(i = 0; i<strlen(input);i++) {
-        for (y = 0; y < 33; y++) {
-            for (x = i*67; x < (i+1)*67; x++) {
-            // printf("PRINT: %d %d\n", y, x);
-            int axis = x % 67;
-            // printf("%d\n",axis);
-
-            // printf("%c", alphabets[0][y][axis]);
-
-
-            location = (x+vinfo.xoffset) * (vinfo.bits_per_pixel/8) +
-                       (y+vinfo.yoffset) * finfo.line_length;           
-            if (vinfo.bits_per_pixel == 32) {
-                if(alphabets[0][y][axis] != ' ') {
-                    *(fbp + location) = 255;        // Some blue
-                    *(fbp + location + 1) = 255;     // A little green
-                    *(fbp + location + 2) = 255;    // A lot of red
-                    *(fbp + location + 3) = 0;   // No transparency 
-                }     
-                else {
-                    *(fbp + location) = 0;        // Some blue
-                    *(fbp + location + 1) = 0;     // A little green
-                    *(fbp + location + 2) = 0;    // A lot of red
-                    *(fbp + location + 3) = 0;   // No transparency
-                }
-        //location += 4;
-            } else  { //assume 16bpp
-                int b = 10;
-                int g = (x-100)/6;     // A little green
-                int r = 31-(y-100)/16;    // A lot of red
-                unsigned short int t = r<<11 | g << 5 | b;
-                *((unsigned short int*)(fbp + location)) = t;
-            }
-
+        char temp = input[i];
+        
+        if(cursor >= 24) {
+            cursor = 0;
+            yoffset++;
         }
-        // printf("\n");
+        for (y = 0 + (yoffset * 50); y < 33 + (yoffset * 50); y++) {
+            for (x = cursor*55; x < (cursor+1)*55; x++) {
+                int axis = x % 55;
+                location = (x+vinfo.xoffset) * (vinfo.bits_per_pixel/8) +
+                           (y+vinfo.yoffset) * finfo.line_length;           
+                if (vinfo.bits_per_pixel == 32) {
+                    if(temp == ' ') {
+                        *(fbp + location) = 0;        // Some blue
+                        *(fbp + location + 1) = 0;     // A little green
+                        *(fbp + location + 2) = 0;    // A lot of red
+                        *(fbp + location + 3) = 0;
+                    } else if(alphabets[temp - 'A'][y % 50][axis] != ' ') {
+                        *(fbp + location) = 255;        // Some blue
+                        *(fbp + location + 1) = 255;     // A little green
+                        *(fbp + location + 2) = 255;    // A lot of red
+                        *(fbp + location + 3) = 0;   // No transparency 
+                    } else {
+                        *(fbp + location) = 0;        // Some blue
+                        *(fbp + location + 1) = 0;     // A little green
+                        *(fbp + location + 2) = 0;    // A lot of red
+                        *(fbp + location + 3) = 0;   // No transparency
+                    }
+            //location += 4;
+                } else { //assume 16bpp
+                    int b = 10;
+                    int g = (x-100)/6;     // A little green
+                    int r = 31-(y-100)/16;    // A lot of red
+                    unsigned short int t = r<<11 | g << 5 | b;
+                    *((unsigned short int*)(fbp + location)) = t;
+                }
+            }
+        }
+        cursor++;
     }
-
-    }
-    
     
     munmap(fbp, screensize);
     close(fbfd);
