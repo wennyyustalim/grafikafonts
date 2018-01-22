@@ -1,14 +1,10 @@
 /*
-To test that the Linux framebuffer is set up correctly, and that the device permissions
-are correct, use the program below which opens the frame buffer and draws a gradient-
-filled red square:
-
 retrieved from:
 Testing the Linux Framebuffer for Qtopia Core (qt4-x11-4.2.2)
 
 http://cep.xor.aps.anl.gov/software/qt4-x11-4.2.2/qtopiacore-testingframebuffer.html
 */
-
+#include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -92,6 +88,25 @@ int main()
     int cursor = 0;
     int xoffset = 0;
     int yoffset = 0;
+
+    for (y = 0; y < vinfo.yres-100; y++)
+        for (x = 0; x < vinfo.xres; x++) {
+            location = (x+vinfo.xoffset) * (vinfo.bits_per_pixel/8) +
+                       (y+vinfo.yoffset) * finfo.line_length;
+            if (vinfo.bits_per_pixel == 32) {
+                *(fbp + location) = 0;
+                *(fbp + location + 1) = 0;
+                *(fbp + location + 2) = 0;
+                *(fbp + location + 3) = 0;
+            } else  { //assume 16bpp
+                int b = 0;
+                int g = 0;
+                int r = 0;
+                unsigned short int t = r<<11 | g << 5 | b;
+                *((unsigned short int*)(fbp + location)) = t;
+            }
+        }
+
     for(i = 0; i<strlen(input);i++) {
         char temp = input[i];
         
@@ -103,7 +118,7 @@ int main()
             for (x = cursor*55; x < (cursor+1)*55; x++) {
                 int axis = x % 55;
                 location = (x+vinfo.xoffset) * (vinfo.bits_per_pixel/8) +
-                           (y+vinfo.yoffset) * finfo.line_length;           
+                           (y+vinfo.yoffset) * finfo.line_length;
                 if (vinfo.bits_per_pixel == 32) {
                     if(temp == ' ') {
                         *(fbp + location) = 0;        // Some blue
