@@ -1,9 +1,3 @@
-/*
-retrieved from:
-Testing the Linux Framebuffer for Qtopia Core (qt4-x11-4.2.2)
-
-http://cep.xor.aps.anl.gov/software/qt4-x11-4.2.2/qtopiacore-testingframebuffer.html
-*/
 #include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -14,17 +8,15 @@ http://cep.xor.aps.anl.gov/software/qt4-x11-4.2.2/qtopiacore-testingframebuffer.
 #include <sys/mman.h>
 #include <sys/ioctl.h>
 
-int read_line(FILE *in, char *buffer, size_t max)
-{
+int read_line(FILE *in, char *buffer, size_t max) {
   return fgets(buffer, max, in) == buffer;
 }
 
-int main()
-{
+int main() {
     // Alphabet container
     char alphabets[26][33][100];
 
-    // Read alphabet A
+    // Read alphabets A-Z from external files
 	FILE *in;
     for(char a= 'A'; a<= 'Z'; a++) {
         char fname[] = "alphabets/A.txt";
@@ -46,6 +38,7 @@ int main()
     int x = 0, y = 0;
     long int location = 0;
 
+    // Scan user input
     char input[1000];
     scanf("%[^\n]",input);
 
@@ -81,7 +74,8 @@ int main()
     }
     printf("The framebuffer device was mapped to memory successfully.\n");
 
-    x = 0; y = 0;       // Where we are going to put the pixel
+    // Where to put pixel
+    x = 0; y = 0;
 
     // Figure out where in memory to put the pixel
     int i;
@@ -98,7 +92,7 @@ int main()
                 *(fbp + location + 1) = 0;
                 *(fbp + location + 2) = 0;
                 *(fbp + location + 3) = 0;
-            } else  { //assume 16bpp
+            } else  {
                 int b = 0;
                 int g = 0;
                 int r = 0;
@@ -107,7 +101,7 @@ int main()
             }
         }
 
-    for(i = 0; i<strlen(input);i++) {
+    for(i = 0; i<strlen(input); i++) {
         char temp = input[i];
         
         if(cursor >= 24) {
@@ -121,26 +115,25 @@ int main()
                            (y+vinfo.yoffset) * finfo.line_length;
                 if (vinfo.bits_per_pixel == 32) {
                     if(temp == ' ') {
-                        *(fbp + location) = 0;        // Some blue
-                        *(fbp + location + 1) = 0;     // A little green
-                        *(fbp + location + 2) = 0;    // A lot of red
+                        *(fbp + location) = 0;
+                        *(fbp + location + 1) = 0;
+                        *(fbp + location + 2) = 0;
                         *(fbp + location + 3) = 0;
                     } else if(alphabets[temp - 'A'][y % 50][axis] != ' ') {
-                        *(fbp + location) = 255;        // Some blue
-                        *(fbp + location + 1) = 255;     // A little green
-                        *(fbp + location + 2) = 255;    // A lot of red
-                        *(fbp + location + 3) = 0;   // No transparency 
+                        *(fbp + location) = 255;
+                        *(fbp + location + 1) = 255;
+                        *(fbp + location + 2) = 255;
+                        *(fbp + location + 3) = 0;
                     } else {
-                        *(fbp + location) = 0;        // Some blue
-                        *(fbp + location + 1) = 0;     // A little green
-                        *(fbp + location + 2) = 0;    // A lot of red
-                        *(fbp + location + 3) = 0;   // No transparency
+                        *(fbp + location) = 0;
+                        *(fbp + location + 1) = 0;
+                        *(fbp + location + 2) = 0;
+                        *(fbp + location + 3) = 0;
                     }
-            //location += 4;
-                } else { //assume 16bpp
+                } else {
                     int b = 10;
-                    int g = (x-100)/6;     // A little green
-                    int r = 31-(y-100)/16;    // A lot of red
+                    int g = (x-100)/6;
+                    int r = 31-(y-100)/16;
                     unsigned short int t = r<<11 | g << 5 | b;
                     *((unsigned short int*)(fbp + location)) = t;
                 }
